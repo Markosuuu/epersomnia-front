@@ -17,9 +17,9 @@ export default function CardViajeroAstral({ nombreViajero }: Prop) {
     <>
       <div
         onClick={handleClick}
-        className="card-viajero-astral items-center cursor-pointer"
+        className="flex items-center gap-3 w-full cursor-pointer"
       >
-        <img src="https://picsum.photos/200" alt={`image_${nombreViajero}`} />
+        <img src="https://picsum.photos/200" alt={`image_${nombreViajero}`} className="w-20 h-20 bg-gray-300 rounded-sm" />
         <h3 className="ms-4 text-xl font-semibold">{nombreViajero}</h3>
       </div>
     </>

@@ -1,3 +1,7 @@
+/**
+ * Era un header esto, pero está medio pelopincho
+ * @deprecated
+ */
 export default function Header() {
     return(
         <>
