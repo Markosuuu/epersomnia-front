@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Spinner from "../components/Spinner";
 import AtributoElemental from "../components/AtributoElemental";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 export type EnergiaElemental = {
   fuego: number;
@@ -38,11 +38,12 @@ export default function ManifestarAvatar() {
     agua: 1,
     tierra: 1,
     aire: 1,
-    total: 4
+    total: 4,
   });
   const [energia, setEnergia] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const id = localStorage.getItem("viajeroSeleccionadoId");
@@ -54,7 +55,9 @@ export default function ManifestarAvatar() {
 
     const fetchViajero = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/viajero-astral/${id}`);
+        const response = await fetch(
+          `http://localhost:8080/viajero-astral/${id}`
+        );
         if (!response.ok) throw new Error("Error al obtener viajero");
 
         const data: ViajeroAstral = await response.json();
@@ -100,9 +103,7 @@ export default function ManifestarAvatar() {
 
         const data: Avatar[] = await response.json();
 
-        setViajero(prev =>
-          prev ? { ...prev, avatares: data } : prev
-        );
+        setViajero((prev) => (prev ? { ...prev, avatares: data } : prev));
       } catch (error) {
         console.error("Error obteniendo avatares", error);
       }
@@ -137,7 +138,18 @@ export default function ManifestarAvatar() {
         }
       );
 
-      if (!response.ok) throw new Error("Error al crear avatar");
+      if (!response.ok) {
+        let errorMessage = "Error desconocido";
+
+        try {
+          const errorJson = await response.json();
+          errorMessage = errorJson.error || errorMessage;
+        } catch {
+          errorMessage = await response.text();
+        }
+
+        throw new Error(errorMessage);
+      }
 
       const nuevoAvatar = await response.json();
 
@@ -149,7 +161,7 @@ export default function ManifestarAvatar() {
 
       handleReset();
     } catch (err) {
-      setError("Error al crear el avatar.");
+      setError((err as Error).message);
     }
   };
 
@@ -207,18 +219,17 @@ export default function ManifestarAvatar() {
       </div>
     );
 
+  const handlerMapa = async () => {
+    setLocation(`/explorar-suenios`);
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0215] text-purple-200 flex flex-col items-center justify-center pb-10 overflow-x-hidden">
-        <h1 className="text-2xl font-bold my-4 text-center tracking-wider">
-          <Link
-            to="/"
-          >
-            Torre de los sueños
-          </Link>
-        </h1>
-        <div className="border-b border-purple-700 w-full mb-8 text-center" />
+      <h1 className="text-2xl font-bold my-4 text-center tracking-wider">
+        <Link to="/">Torre de los sueños</Link>
+      </h1>
+      <div className="border-b border-purple-700 w-full mb-8 text-center" />
       <div className="max-w-5xl w-full p-6 rounded-2xl shadow-xl">
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 justify-items-center">
           {/* COLUMNA IZQUIERDA */}
           <div className="w-full max-w-[350px]">
@@ -248,24 +259,28 @@ export default function ManifestarAvatar() {
               <div className="mt-4 mb-2 text-sm">
                 <p className="font-medium">
                   Puntos disponibles:{" "}
-                  <span className="text-purple-200 font-bold">{energia-4}</span>
+                  <span className="text-purple-200 font-bold">
+                    {energia - 4}
+                  </span>
                 </p>
               </div>
 
               <div className="grid grid-cols-1 gap-4 text-center mb-4">
-                {Object.entries(stats).filter(([key])=>key!=="total").map(([key, value]) => (
-                  <AtributoElemental
-                    key={key}
-                    nombre={key}
-                    valor={value}
-                    onIncrement={() =>
-                      handleStatChange(key as keyof EnergiaElemental, +1)
-                    }
-                    onDecrement={() =>
-                      handleStatChange(key as keyof EnergiaElemental, -1)
-                    }
-                  />
-                ))}
+                {Object.entries(stats)
+                  .filter(([key]) => key !== "total")
+                  .map(([key, value]) => (
+                    <AtributoElemental
+                      key={key}
+                      nombre={key}
+                      valor={value}
+                      onIncrement={() =>
+                        handleStatChange(key as keyof EnergiaElemental, +1)
+                      }
+                      onDecrement={() =>
+                        handleStatChange(key as keyof EnergiaElemental, -1)
+                      }
+                    />
+                  ))}
               </div>
 
               <div className="flex flex-col gap-3 mt-6">
@@ -292,36 +307,46 @@ export default function ManifestarAvatar() {
           </div>
 
           {/* COLUMNA DERECHA */}
-          {viajero?.avatares?.length ? (
-            <div className="w-full max-w-[350px] mt-10 lg:mt-0">
-              <h1 className="text-2xl font-bold mb-4 text-center tracking-widest">
-                Avatares creados
-              </h1>
-              <ul className="space-y-4">
-                {viajero.avatares.map((a) => (
-                  <li
-                    key={a.id}
-                    className="border border-purple-700 rounded-2xl bg-[#160427] p-3 flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gray-300 rounded-sm" />
-                      <span>{a.aspecto}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      {Object.entries(a.poderElemental)
-                        .filter(([key]) => key !== "total")
-                        .map(([key, val]) => (
-                        <div key={key} className="flex items-center gap-1">
-                          <div className="w-4 h-4">{handleIcon(key)}</div>
-                          <span className="text-sm">{val}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+          <div className="w-full max-w-[350px] mt-10 lg:mt-0">
+            {viajero?.avatares?.length ? (
+              <>
+                <h1 className="text-2xl font-bold mb-4 text-center tracking-widest">
+                  Avatares creados
+                </h1>
+                <ul className="space-y-4">
+                  {viajero.avatares.map((a) => (
+                    <li
+                      key={a.id}
+                      onClick={handlerMapa}
+                      className="border cursor-pointer border-purple-700 rounded-2xl bg-[#160427] p-3 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-300 rounded-sm" />
+                        <span>{a.aspecto}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        {Object.entries(a.poderElemental)
+                          .filter(([key]) => key !== "total")
+                          .map(([key, val]) => (
+                            <div key={key} className="flex items-center gap-1">
+                              <div className="w-4 h-4">{handleIcon(key)}</div>
+                              <span className="text-sm">{val}</span>
+                            </div>
+                          ))}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+            <section className="text-center mt-10 text-base/10 tracking-wider">
+              Aquí puedes crear un avatar para tu viajero astral. Distribuí los
+              puntos elementales entre fuego, agua, tierra y aire como prefieras
+              y elegí un aspecto que lo represente. Cuando estés listo, presioná
+              Crear y el avatar aparecerá a la derecha, donde podrás
+              seleccionarlo para jugar con él.
+            </section>
+          </div>
         </div>
       </div>
     </div>
