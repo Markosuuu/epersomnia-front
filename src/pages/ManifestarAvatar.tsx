@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Spinner from "../components/Spinner";
 import AtributoElemental from "../components/AtributoElemental";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 
 export type EnergiaElemental = {
   fuego: number;
@@ -224,11 +224,7 @@ export default function ManifestarAvatar() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0215] text-purple-200 flex flex-col items-center justify-center pb-10 overflow-x-hidden">
-      <h1 className="text-2xl font-bold my-4 text-center tracking-wider">
-        <Link to="/">Torre de los sueños</Link>
-      </h1>
-      <div className="border-b border-purple-700 w-full mb-8 text-center" />
+    <div className="bg-[#0a0215] text-purple-200 flex flex-col items-center justify-center pb-10 overflow-x-hidden">
       <div className="max-w-5xl w-full p-6 rounded-2xl shadow-xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 justify-items-center">
           {/* COLUMNA IZQUIERDA */}
