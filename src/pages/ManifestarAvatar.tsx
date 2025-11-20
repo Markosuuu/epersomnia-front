@@ -1,66 +1,77 @@
 import { useEffect, useState } from "react";
 import Spinner from "../components/Spinner";
 import AtributoElemental from "../components/AtributoElemental";
+import { Link } from "wouter";
 
-type PoderElemental = {
+export type EnergiaElemental = {
   fuego: number;
   agua: number;
-  tierra: number;
   aire: number;
+  tierra: number;
+  total: number;
+};
+
+export type ViajeroAstral = {
+  id: number;
+  nombre: string;
+  imagenUrl: string;
+  poderMaximo: EnergiaElemental;
+  poderDisponible: EnergiaElemental;
+  avatares: Avatar[];
 };
 
 type Avatar = {
   id: number;
   aspecto: string;
-  poderElemental: PoderElemental;
-};
-
-type ViajeroData = {
-  id: number;
-  nombre: string;
-  energiaDisponible: number;
-  avatares: Avatar[];
+  imagenUrl: string;
+  poderElemental: EnergiaElemental;
+  viajeroAstralId: number;
+  idsSueñosExplorados: number[];
+  lucidezDisponible: number;
 };
 
 export default function ManifestarAvatar() {
-  const [viajero, setViajero] = useState<ViajeroData | null>(null);
+  const [viajero, setViajero] = useState<ViajeroAstral | null>(null);
   const [aspecto, setAspecto] = useState("");
-  const [stats, setStats] = useState<PoderElemental>({
+  const [stats, setStats] = useState<EnergiaElemental>({
     fuego: 1,
     agua: 1,
     tierra: 1,
     aire: 1,
+    total: 4
   });
   const [energia, setEnergia] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const nombreViajero =
-    localStorage.getItem("viajeroSeleccionado") || "<viajero>";
-
-  // esto es para aparentar una carga
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setViajero({
-        id: 1,
-        nombre: nombreViajero,
-        energiaDisponible: 28,
-        avatares: [
-          {
-            id: 1,
-            aspecto: "Depresión",
-            poderElemental: { fuego: 2, agua: 3, tierra: 1, aire: 1 },
-          },
-        ],
-      });
-      setEnergia(28);
+    const id = localStorage.getItem("viajeroSeleccionadoId");
+    if (!id) {
+      setError("No se encontró el viajero seleccionado.");
       setLoading(false);
-    }, 800);
-  }, [nombreViajero]);
+      return;
+    }
+
+    const fetchViajero = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/viajero-astral/${id}`);
+        if (!response.ok) throw new Error("Error al obtener viajero");
+
+        const data: ViajeroAstral = await response.json();
+        setViajero(data);
+        setEnergia(data.poderDisponible.total);
+      } catch (e) {
+        setError("Error cargando datos del viajero.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchViajero();
+  }, []);
 
   // Handlers
-  const handleStatChange = (key: keyof PoderElemental, delta: number) => {
+  const handleStatChange = (key: keyof EnergiaElemental, delta: number) => {
     if (!viajero) return;
     const newValue = stats[key] + delta;
     const totalChange = delta > 0 ? -1 : 1;
@@ -74,9 +85,31 @@ export default function ManifestarAvatar() {
 
   const handleReset = () => {
     setAspecto("");
-    setStats({ fuego: 1, agua: 1, tierra: 1, aire: 1 });
-    setEnergia(viajero ? viajero.energiaDisponible : 0);
+    setStats({ fuego: 1, agua: 1, tierra: 1, aire: 1, total: 4 });
+    setEnergia(viajero ? viajero.poderDisponible.total : 0);
   };
+
+  useEffect(() => {
+    if (!viajero) return;
+
+    const fetchAvatares = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:8080/avatar/viajero-astral/${viajero.id}`
+        );
+
+        const data: Avatar[] = await response.json();
+
+        setViajero(prev =>
+          prev ? { ...prev, avatares: data } : prev
+        );
+      } catch (error) {
+        console.error("Error obteniendo avatares", error);
+      }
+    };
+
+    fetchAvatares();
+  }, [viajero?.id]);
 
   const handleCrear = async () => {
     if (!aspecto.trim()) {
@@ -95,22 +128,25 @@ export default function ManifestarAvatar() {
     };
 
     try {
-      /* REEMPLAZAR CUANDO ESTÉ EL BACK
-      const response = await fetch(`/avatar/viajero-astral/${viajero.id}/manifestar`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const nuevoAvatar = await response.json();
-      setViajero({ ...viajero, avatares: [...viajero.avatares, nuevoAvatar] });
-      */
+      const response = await fetch(
+        `http://localhost:8080/avatar/viajero-astral/${viajero.id}/manifestar`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }
+      );
 
-      // EJEMPLO PARA ESTAR CARGADO NOMÁS:
-      const nuevoAvatar = { ...body, id: Date.now() };
+      if (!response.ok) throw new Error("Error al crear avatar");
+
+      const nuevoAvatar = await response.json();
+
+      // sumarlo al viajero
       setViajero({
         ...viajero,
-        avatares: [...viajero.avatares, nuevoAvatar as unknown as Avatar],
+        avatares: [...(viajero.avatares || []), nuevoAvatar],
       });
+
       handleReset();
     } catch (err) {
       setError("Error al crear el avatar.");
@@ -174,7 +210,11 @@ export default function ManifestarAvatar() {
   return (
     <div className="min-h-screen bg-[#0a0215] text-purple-200 flex flex-col items-center justify-center pb-10 overflow-x-hidden">
         <h1 className="text-2xl font-bold my-4 text-center tracking-wider">
-          Torre de los sueños
+          <Link
+            to="/"
+          >
+            Torre de los sueños
+          </Link>
         </h1>
         <div className="border-b border-purple-700 w-full mb-8 text-center" />
       <div className="max-w-5xl w-full p-6 rounded-2xl shadow-xl">
@@ -200,7 +240,7 @@ export default function ManifestarAvatar() {
                 type="text"
                 value={aspecto}
                 onChange={(e) => setAspecto(e.target.value)}
-                className="p-2 rounded-lg bg-white/10 border border-white/30 text-white placeholder-white/70 focus:outline-none"
+                className="p-2 w-full rounded-lg bg-white/10 border border-white/30 text-white placeholder-white/70 focus:outline-none"
                 placeholder="Ej: Valentía"
                 required
               />
@@ -208,21 +248,21 @@ export default function ManifestarAvatar() {
               <div className="mt-4 mb-2 text-sm">
                 <p className="font-medium">
                   Puntos disponibles:{" "}
-                  <span className="text-purple-200 font-bold">{energia}</span>
+                  <span className="text-purple-200 font-bold">{energia-4}</span>
                 </p>
               </div>
 
               <div className="grid grid-cols-1 gap-4 text-center mb-4">
-                {Object.entries(stats).map(([key, value]) => (
+                {Object.entries(stats).filter(([key])=>key!=="total").map(([key, value]) => (
                   <AtributoElemental
                     key={key}
                     nombre={key}
                     valor={value}
                     onIncrement={() =>
-                      handleStatChange(key as keyof PoderElemental, +1)
+                      handleStatChange(key as keyof EnergiaElemental, +1)
                     }
                     onDecrement={() =>
-                      handleStatChange(key as keyof PoderElemental, -1)
+                      handleStatChange(key as keyof EnergiaElemental, -1)
                     }
                   />
                 ))}
@@ -268,7 +308,9 @@ export default function ManifestarAvatar() {
                       <span>{a.aspecto}</span>
                     </div>
                     <div className="flex gap-2">
-                      {Object.entries(a.poderElemental).map(([key, val]) => (
+                      {Object.entries(a.poderElemental)
+                        .filter(([key]) => key !== "total")
+                        .map(([key, val]) => (
                         <div key={key} className="flex items-center gap-1">
                           <div className="w-4 h-4">{handleIcon(key)}</div>
                           <span className="text-sm">{val}</span>
