@@ -10,43 +10,47 @@ const nodeTypes = {
   circle: CircleNode,
 };
 
-function alinearNodosBidireccionales(
-  nodes: any[],
-  edges: any[]
-) {
-  const posiciones: Record<string, { y: number }> = {};
+// Funcion auxiliar para agrupar sueños por nivel
+function agruparPorNivel(suenios: any[]) {
+  const niveles: Record<number, any[]> = {};
 
-  edges.forEach((e) => {
-    const reverse = edges.find(
-      (r) => r.source === e.target && r.target === e.source
-    );
-
-    if (reverse) {
-      posiciones[e.source] = { y: 0 };
-      posiciones[e.target] = { y: 0 };
-    }
+  suenios.forEach((s) => {
+    if (!niveles[s.nivel]) niveles[s.nivel] = [];
+    niveles[s.nivel].push(s);
   });
 
-  return nodes.map((n) => ({
-    ...n,
-    position: {
-      x: n.position.x,
-      y: posiciones[n.id]?.y ?? n.position.y,
-    },
-  }));
+  return niveles;
 }
 
-
 export default function GrafoSuenios({ suenios, conexiones }: any) {
-  // Transformación: Sueño → nodo reactflow
-  const nodes = suenios.map((s: any) => ({
-    id: s.id.toString(),
-    type: "circle",
-    position: { x: Math.random() * 800, y: Math.random() * 800 },
-    data: { label: `${s.nombre}` },
-  }));
 
-  // Transformación: Conexion → edge reactflow
+  const niveles = agruparPorNivel(suenios);
+
+  const nodes = suenios.map((s: any) => {
+    const sueniosEnEseNivel = niveles[s.nivel];
+    const indiceDentroDelNivel = sueniosEnEseNivel.findIndex((x) => x.id === s.id);
+
+    const separacionX = 320;
+    const separacionY = 280;
+
+    const cantidadEnNivel = sueniosEnEseNivel.length;
+
+    // Centro del nivel → desplazamiento negativo
+    const offsetX = -((cantidadEnNivel - 1) * separacionX) / 2;
+
+    return {
+      id: s.id.toString(),
+      type: "circle",
+
+      position: {
+        x: offsetX + indiceDentroDelNivel * separacionX,
+        y: -s.nivel * separacionY,
+      },
+
+      data: { label: `#${s.id.toString()}` },
+    };
+  });
+
   const edges = conexiones.map((c: any) => ({
     id: `${c.origen}-${c.destino}`,
     source: c.origen.toString(),
@@ -55,18 +59,11 @@ export default function GrafoSuenios({ suenios, conexiones }: any) {
     animated: true
   }));
 
-  const nodesAlineados = alinearNodosBidireccionales(nodes, edges);
-
   return (
     <div style={{ width: "100%", height: "600px" }}>
-      <ReactFlow
-        nodes={nodesAlineados}
-        edges={edges}
-        nodeTypes={nodeTypes}
-      >
+      <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView>
         <Background />
         <Controls />
-        {/* <MiniMap /> */}
       </ReactFlow>
     </div>
   );

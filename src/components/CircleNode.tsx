@@ -20,8 +20,8 @@ export default function CircleNode({ data }: any) {
       }}
     >
       <Handle type="source" position={Position.Top} />
-      <Handle type="target" position={Position.Top} />
-
+      <Handle type="target" position={Position.Bottom} />
+      
       {data.label}
     </div>
   );
