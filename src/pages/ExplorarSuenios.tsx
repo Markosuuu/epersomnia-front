@@ -19,7 +19,9 @@ export default function ExplorarSuenios() {
 
   return (
     <>
-      <GrafoSuenios suenios={suenios} conexiones={conexiones} />
+      <div className="flex justify-center">
+        <GrafoSuenios suenios={suenios} conexiones={conexiones} />
+      </div>
     </>
   );
 }

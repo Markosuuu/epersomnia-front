@@ -30,7 +30,7 @@ export default function GrafoSuenios({ suenios, conexiones }: any) {
     const sueniosEnEseNivel = niveles[s.nivel];
     const indiceDentroDelNivel = sueniosEnEseNivel.findIndex((x) => x.id === s.id);
 
-    const separacionX = 320;
+    const separacionX = 280;
     const separacionY = 280;
 
     const cantidadEnNivel = sueniosEnEseNivel.length;
@@ -47,7 +47,11 @@ export default function GrafoSuenios({ suenios, conexiones }: any) {
         y: -s.nivel * separacionY,
       },
 
-      data: { label: `#${s.id.toString()}` },
+      data: { 
+        nombreSuenio: s.nombre,
+        cantidadDiamantes: s.cantidadFragmentosDisponibles || 0,
+        cantidadPersonas: s.personas || 0 
+      },
     };
   });
 
@@ -55,12 +59,21 @@ export default function GrafoSuenios({ suenios, conexiones }: any) {
     id: `${c.origen}-${c.destino}`,
     source: c.origen.toString(),
     target: c.destino.toString(),
-    label: `Costo: ${c.costeDeLucidez}`,
-    animated: true
+    label: `Costo : ${c.costeDeLucidez}`,
+    animated: true,
+    labelStyle: {
+      textTransform: 'uppercase',
+      fontWeight: 'bold',
+      fill: 'black',
+    },
+    labelBgStyle: { 
+      fill: 'rgba(32, 206, 177)',
+    },
+    labelBgPadding: [6, 4],
   }));
 
   return (
-    <div style={{ width: "100%", height: "600px" }}>
+    <div style={{ width: "60%", height: "70vh" }}>
       <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView>
         <Background />
         <Controls />
