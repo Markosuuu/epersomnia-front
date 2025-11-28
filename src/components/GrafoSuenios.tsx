@@ -73,7 +73,7 @@ export default function GrafoSuenios({ suenios, conexiones }: any) {
   }));
 
   return (
-    <div style={{ width: "60%", height: "70vh" }}>
+    <div style={{ width: "100%", height: "80vh" }}>
       <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView>
         <Background />
         <Controls />
