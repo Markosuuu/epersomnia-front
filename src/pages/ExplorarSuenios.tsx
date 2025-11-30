@@ -1,6 +1,7 @@
 import GrafoSuenios from "../components/GrafoSuenios";
 import { useEffect, useState } from "react";
 import TarjetaAvatar from "../components/TarjetaAvatar";
+import PanelEventos from "../components/PanelEventos";
 
 export default function ExplorarSuenios() {
   const [suenios, setSuenios] = useState([]);
@@ -36,7 +37,8 @@ export default function ExplorarSuenios() {
             <GrafoSuenios suenios={suenios} conexiones={conexiones} />
           </div>
           
-          <div className="w-2/9"> 
+          <div className="w-2/9 h-30vh"> 
+           <PanelEventos></PanelEventos>
           </div>
           
         </div>
