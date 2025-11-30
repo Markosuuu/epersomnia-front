@@ -47,7 +47,8 @@ export default function GrafoSuenios({ suenios, conexiones }: any) {
         y: -s.nivel * separacionY,
       },
 
-      data: { 
+      data: {
+        id: s.id, 
         nombreSuenio: s.nombre,
         cantidadDiamantes: s.cantidadFragmentosDisponibles || 0,
         cantidadPersonas: s.personas || 0 

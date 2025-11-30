@@ -40,7 +40,7 @@ export interface EventoPruebaSuperada extends EventoBase{
 export interface EventoDuelo extends EventoBase{
   tipo:"Desconocimiento";
   avatarRetadorId: number;
-  aspectoRetador: string;
+  aspecto: string;
   avatarDesafiadoId: number;
   aspectoDesafiado: string;
   sueñoId: number;

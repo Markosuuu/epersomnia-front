@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { collection, onSnapshot, query, where, QuerySnapshot, type DocumentData } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
-// --- 1. Definición de Tipos (Interfaces) ---
+// --- Definición de Tipos (Interfaces) ---
 
 interface PoderElemental {
   fuego: number;
@@ -25,10 +27,10 @@ interface ListaViajerosAstralesProps {
   viajeros: ViajeroAstral[];
 }
 
-// --- 2. Función para manejar los Íconos SVG ---
+// --- Función para manejar los Íconos SVG ---
 
 const handleIcon = (elem: keyof Omit<PoderElemental, 'total'>) => {
-  const iconStyle = { width: '20px', height: '20px', verticalAlign: 'middle', marginRight: '5px' };
+  const iconStyle = { width: '1.1em', height: '1.1em', verticalAlign: 'middle', marginRight: '5px' };
 
   switch (elem) {
     case "fuego":
@@ -72,10 +74,100 @@ const handleIcon = (elem: keyof Omit<PoderElemental, 'total'>) => {
   }
 };
 
-// --- 3. Componente Tarjeta Viajero ---
+// --- Componente Tarjeta Viajero ---
 
 const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
+  
   const { aspecto, viajeroAstralNombre, lucidezDisponible, poderElemental } = data;
+  const [lucidezActual, setLucidezActual] = useState(lucidezDisponible || 0);
+  const [vidasRestantes, setVidasRestantes] = useState(3);
+  const [fragmentosRecogidos, setFragmentosRecogidos] = useState(0);
+
+
+  const handleObtenerFragmento = () => setFragmentosRecogidos(p => p + 1);
+  const handleQuitarFragmento = () => setFragmentosRecogidos(p => Math.max(0, p - 1));
+
+  const handlePerderVida = () => setVidasRestantes(p => Math.max(0, p - 1));
+  const handleSumarVida = () => setVidasRestantes(p => Math.min(3, p + 1));
+
+  const handleQueryVida = (snapshot: QuerySnapshot<DocumentData>) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type == ("added")) {
+        handlePerderVida();
+      }
+      if (change.type == ("removed")) {
+        handleSumarVida();
+      }
+    })
+  }
+  
+  useEffect(() => {
+
+    const eventosRef = collection(db, "avatar-log");
+    
+    const queryMovimiento = query(
+      eventosRef, 
+      where("metadata.tipo", "==", "Movimiento"),
+      where("metadata.avatarId", "==", data.id)
+    );
+
+    const queryFragmentos = query(
+      eventosRef, 
+      where("metadata.tipo", "==", "Obtener Fragmento"),
+      where("metadata.avatarId", "==", data.id)
+    );
+
+    const queryPierdeRetador = query(
+      eventosRef, 
+      where("metadata.tipo", "==", "Desconocimiento"),
+      where("metadata.avatarRetadorId", "==", data.id),
+      where("metadata.fueGanador", "==", false),
+    );
+
+    const queryPierdeDesafiado = query(
+      eventosRef, 
+      where("metadata.tipo", "==", "Desconocimiento"),
+      where("metadata.avatarDesafiadoId", "==", data.id),
+      where("metadata.fueGanador", "==", true),
+    );
+
+
+    const unsubscribeMovimientos = onSnapshot(queryMovimiento, (snapshot) => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type == ("added")) {
+          const eventoData = change.doc.data()
+          setLucidezActual(eventoData.metadata.lucidezRestante);
+        }
+      })
+    });
+
+    const unsubscribeFragmentos = onSnapshot(queryFragmentos, (snapshot) => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type == ("added")) {
+          handleObtenerFragmento();
+        }
+        if (change.type == ("removed")) {
+          handleQuitarFragmento();
+        }
+      })
+    });
+
+    const unsuscribePierdeRetador = onSnapshot(queryPierdeRetador, (snapshot) => {
+      handleQueryVida(snapshot);
+    });
+
+    const unsuscribePierdeDesafiado = onSnapshot(queryPierdeDesafiado, (snapshot) => {
+      handleQueryVida(snapshot);
+    })
+
+    return () => {
+      unsubscribeMovimientos();
+      unsubscribeFragmentos();
+      unsuscribePierdeDesafiado();
+      unsuscribePierdeRetador();
+    }
+  },[data.id]);
+
 
   // Genera la representación de los poderes elementales
   const elementos = (Object.keys(ELEMENTO_EMOJIS) as (keyof Omit<PoderElemental, 'total'>)[])
@@ -83,7 +175,7 @@ const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
       const valor = poderElemental[elemento];
       if (valor > 0) {
         return (
-          <span key={elemento} style={{ margin: '2px 10px 0 0', display: 'flex', alignItems: 'center' }}>
+          <span key={elemento} style={{ display: 'flex', alignItems: 'center', marginLeft: '5px' }}>
             {handleIcon(elemento)} {/* ⬅️ Llamada a la función SVG */}
             {valor}
           </span>
@@ -93,34 +185,73 @@ const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
     })
     .filter(Boolean);
 
-  // ... (El resto del return de TarjetaViajero es igual, usando los estilos definidos previamente)
+  
   return (
     <div style={cardStyle}>
       <div style={contentStyle}>
-        {/* Aspecto (Nombre) */}
-        <h3 style={titleStyle}>{aspecto}</h3>
-        
-        {/* Nombre del Viajero Astral (Subtítulo) */}
-        <p style={subtitleStyle}>Avatar de {viajeroAstralNombre}</p>
 
-        {/* CONTENEDOR DE ELEMENTOS Y LUCIDEZ */}
-        <div style={elementalContainerStyle}>
+        {/* 1. CONTENEDOR DE TÍTULO Y SUBTÍTULO (Centrado) */}
+        <div style={centeredTitleContainerStyle}>
+          <span>
+            {/* Aspecto (Nombre) */}
+            <h3 style={titleStyle}>{aspecto}</h3>
+          </span>
+          <span>
+            {/* Nombre del Viajero Astral (Subtítulo) */}
+            <p style={subtitleStyle}>{viajeroAstralNombre}</p>
+          </span>
+        </div>
+
+        {/* 2. CONTENEDOR DE ELEMENTOS Y STATS INFERIORES */}
+        <div style={avatarStatsContainerStyle}>
+          
           
           {/* Elementos de Poder (Fuego, Agua, etc.) */}
-          {elementos}
-          
-          {/* Lucidez (Ahora es un span y con más margen para separarlo) */}
-          <span 
-            style={{ 
-              ...lucidezStyle, 
-              // 🚀 Añadir margen para separarlo de los otros elementos
-              marginLeft: '25px', 
-              // Asegurar que no tenga el margin-top/bottom que tenía el <p> anterior
-              margin: '0', 
-            }}
-          >
-            ✨🧠 {lucidezDisponible}
+          <span
+            style={{
+              display: 'flex',          
+              flexDirection: 'row',
+              justifyContent: 'center',
+              fontWeight: 'bold',
+              fontSize: '1.15em',
+              background: '#0303034b',  
+              borderRadius: '8px',      
+              padding: '2px 7px 2px 1px',              
+              marginTop: '10px' 
+            }}>
+            {elementos}
           </span>
+          
+          {/* STATS INFERIORES: Distribuido a lo largo del ancho */}
+          <div style={bottomStatsContainerStyle}>
+
+            {/* Lucidez */}
+            <span style={statsStyle}>✨🧠 {lucidezActual}</span>
+
+            {/* Fragmentos */}
+            <span
+              style={{ 
+                ...statsStyle,
+                background: '#0303034b', 
+                color: '#01faedff',
+              }}
+            >
+              💎 {fragmentosRecogidos}
+            </span>
+
+            {/* Vidas */}
+            <span 
+              style={{ 
+                ...statsStyle,
+                background: '#4900009d', 
+                color: '#ff93e8ff',
+                margin: '0',
+              }}
+            >
+              ❤️ {vidasRestantes}
+            </span>
+          </div>
+
         </div>
         
       </div>
@@ -128,7 +259,7 @@ const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
   );
 };
 
-// --- 4. Componente Principal (Mapeador) ---
+// --- Componente Principal (Mapeador) ---
 
 const ListaViajerosAstrales: React.FC<ListaViajerosAstralesProps> = ({ viajeros }) => {
   return (
@@ -142,59 +273,84 @@ const ListaViajerosAstrales: React.FC<ListaViajerosAstralesProps> = ({ viajeros 
 
 export default ListaViajerosAstrales;
 
-// --- 5. Estilos Básicos de CSS (igual que antes) ---
-// (Mantenidos para la funcionalidad del ejemplo)
+// --- Estilos Básicos de CSS ---
 const listContainerStyle: React.CSSProperties = {
   display: 'flex',
-  flexDirection: 'column',
+  flexWrap: 'wrap',
+  flexDirection: 'row',
   gap: '.5em',
   padding: '.5em',
   backgroundColor: 'rgba(0, 0, 0, 0)',
   borderRadius: '8px',
+  maxWidth: '330px',
   maxHeight: '80vh',
 };
+
+const centeredTitleContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  marginBottom: '0',
+};
+
+const bottomStatsContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  width: '100%',
+  padding: '0',
+  marginTop: '2px',
+};
+
 const cardStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   background: 'linear-gradient(to left, #4a177aff, #1f0535ff)',
   borderRadius: '8px',
   boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
-  maxHeight: '9.5vh',
+  height: '17vh',
+  width: '150px',
   color: 'white',
 };
 const contentStyle: React.CSSProperties = {
-  padding: '1em 1em',
-  flexGrow: 1,
+  padding: '.5em .8em',
   display: 'flex',
   flexDirection: 'column',
+  alignItems: 'center',
+  width: '100%',
+  maxWidth: '100%',
+  marginTop: '-7px'
 };
 const titleStyle: React.CSSProperties = {
-  margin: '0 0 1px 0',
-  fontSize: '.85em',
+  margin: '0 0 0 0',
+  fontSize: '.9em',
   fontWeight: 'bold',
   color: 'white',
 };
 const subtitleStyle: React.CSSProperties = {
-  margin: '0 0 1px 0',
-  fontSize: '0.7em',
+  margin: '0',
+  fontSize: '0.6em',
   fontStyle: 'italic',
-  color: '#ccc',
+  fontWeight: 'bold',
+  color: '#fffb00ff',
 };
-const lucidezStyle: React.CSSProperties = {
-  margin: '25px 0',
-  padding: '1px 5px 1px 1px',
-  fontSize: '1.1em',
+const statsStyle: React.CSSProperties = {
+  margin: '0',
+  padding: '1px 5px 1px 3px',
+  fontSize: '1.15em',
   fontWeight: '600',
-  color: '#19f1cdff',
+  color: '#eeff00ff',
   background: '#093f389d',
-  borderRadius: '10%'
+  borderRadius: '8px'
 };
-const elementalContainerStyle: React.CSSProperties = {
-  margin: '0 8 0 0',
-  fontSize: '0.85em',
+const avatarStatsContainerStyle: React.CSSProperties = {
+  margin: '-6px',
+  fontSize: '0.65em',
   display: 'flex',
+  flexDirection: 'column',
   alignItems: 'center',
-  flexWrap: 'wrap',
+  width: '100%'
 };
 // Nota: ELEMENTO_EMOJIS no se usa, pero se mantiene para la definición de tipos.
 const ELEMENTO_EMOJIS: Record<keyof Omit<PoderElemental, 'total'>, string> = {
@@ -203,13 +359,3 @@ const ELEMENTO_EMOJIS: Record<keyof Omit<PoderElemental, 'total'>, string> = {
   tierra: '🌍',
   agua: '💧',
 };
-
-// --- 6. Ejemplo de Uso ---
-/*
-// En tu componente App.tsx o donde lo uses:
-import viajerosData from './data.json'; // O donde tengas el array
-
-function App() {
-  return <ListaViajerosAstrales viajeros={viajerosData} />;
-}
-*/

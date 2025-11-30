@@ -1,8 +1,12 @@
+import { useEffect, useState } from "react";
 import { Handle, Position } from "reactflow";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "../firebaseConfig";
+
 
 // Define la estructura de las propiedades que se esperan en 'data'
 interface CircleNodeData {
-  label: string; // Puede seguir existiendo, aunque usaremos nombreSuenio
+  id: number; // Puede seguir existiendo, aunque usaremos nombreSuenio
   nombreSuenio: string;
   cantidadDiamantes: number;
   cantidadPersonas: number;
@@ -11,10 +15,79 @@ interface CircleNodeData {
 // Ahora el componente acepta un tipo de datos más específico
 export default function CircleNode({ data }: { data: CircleNodeData }) {
   // Desestructurar las propiedades necesarias del objeto data
-  const { nombreSuenio, cantidadDiamantes, cantidadPersonas } = data;
+  const {nombreSuenio, cantidadDiamantes} = data;
+  const [personasActuales, setPersonasActuales] = useState(data.cantidadPersonas || 0);
+  const [fragmentosActuales, setFragmentosActuales] = useState(data.cantidadDiamantes || 0);
+
+  const handleArriboANodo = () => setPersonasActuales(p => p + 1);
+  const handlePartidaDeNodo = () => setPersonasActuales(p => Math.max(0, p - 1));
+
+  const handleQuitarFragmento = () => setFragmentosActuales(p => Math.max(0, p - 1));
+  const handlePonerFragmento = () => setFragmentosActuales(p => Math.min(cantidadDiamantes, p + 1));
+
+  useEffect(() => {
+
+    const eventosRef = collection(db, "avatar-log");
+
+    const queryGenteQueLlega = query(
+      eventosRef, 
+      where("metadata.tipo", "==", "Movimiento"),
+      where("metadata.sueñoDestinoId", "==", data.id)
+    ); 
+
+    const queryGenteQueSeVa = query(
+      eventosRef, 
+      where("metadata.tipo", "==", "Movimiento"),
+      where("metadata.sueñoOrigenId", "==", data.id)
+    );
+    
+    const queryObtenerFragmento = query(
+      eventosRef, 
+      where("metadata.tipo", "==", "Obtener Fargmento"),
+      where("metadata.sueñoId", "==", data.id)
+    );
+    
+
+    const unsubscribers: (() => void)[] = [];
+
+    const unsubscribeArribos = onSnapshot(queryGenteQueLlega, (snapshot) => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type == ("added")) {
+          handleArriboANodo();
+        }
+        if (change.type == ("removed")) {
+          handlePartidaDeNodo();
+        }
+      })
+  })
+  unsubscribers.push(unsubscribeArribos);
+
+  const unsubscribePartidas = onSnapshot(queryGenteQueSeVa, (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type == "added") {
+        handlePartidaDeNodo();
+      }
+    })
+  })
+  unsubscribers.push(unsubscribePartidas);
+
+  const unsubscribeFragmentos = onSnapshot(queryObtenerFragmento, (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type == ("added")) {
+        handleQuitarFragmento();
+      }
+      if (change.type == ("removed")) {
+        handlePonerFragmento();
+      }
+    })
+  })
+  unsubscribers.push(unsubscribeFragmentos);
+
+  return () => unsubscribers.forEach(unsub => unsub());
+}, [data.id]); // Depende del ID del nodo
 
   // Generar los elementos de diamante (usando el ícono 💎)
-  const diamantes = Array.from({ length: cantidadDiamantes }, (_, index) => (
+  const diamantes = Array.from({ length: fragmentosActuales }, (_, index) => (
     <span key={`diamante-${index}`} style={{ fontSize: '1em' }}>
       💎
     </span>
@@ -22,8 +95,12 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
 
   // Generar los elementos de persona (usando un ícono simple o un div)
   // Aquí usaré un ícono de persona, ya que no tengo acceso al CSS de .persona-icon
-  const personas = Array.from({ length: cantidadPersonas }, (_, index) => (
-    <span key={`persona-${index}`} style={{ fontSize: '1.5em' }}>
+  const personas = Array.from({ length: personasActuales }, (_, index) => (
+    <span key={`persona-${index}`} style={{ 
+        fontSize: '1.2em',
+        background: '#fab31aff',
+        border: '2px solid white',
+        borderRadius: '50%' }}>
       👤
     </span> // Usando un ícono Unicode (Persona)
   ));
@@ -64,7 +141,11 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
       </div>
       
       {/* 👤 Fila de Personas */}
-      <div style={{ display: 'flex', gap: '5px', marginTop: '5px', minHeight: '1.2em' }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: '5px',  
+        minHeight: '1.2em'
+        }}>
         {personas}
       </div>
       

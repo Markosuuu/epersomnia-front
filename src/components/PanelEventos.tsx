@@ -63,8 +63,6 @@ const PanelEventos = () => {
         style={{ height: '70vh' }}
       >
         {eventos.map((evento) => {
-          console.log("Tipo buscado:", evento.tipo, "¿Existe Renderer?:", EventoRendererMap[evento.tipo] ? 'Sí' : 'No');
-
           const Renderer = EventoRendererMap[evento.tipo];
 
           // Manejo de error si el tipo de evento no existe

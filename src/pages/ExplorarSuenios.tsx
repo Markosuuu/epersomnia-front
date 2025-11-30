@@ -27,17 +27,17 @@ export default function ExplorarSuenios() {
   return (
     <>
       <div style={{ padding: '20px' }}> {/* Contenedor principal para el layout */}
-        <div className="flex justify-between items-start h-10vh">
+        <div className="flex h-10vh">
           
-          <div className="w-2/9"> 
+          <div className="w-81 flex-shrink-0"> 
             <TarjetaAvatar viajeros={avatares} />
           </div>
           
-          <div className="w-5/9 flex justify-center"> {/* Usa w-1/2 para darle 50% del ancho y centrar su contenido */}
+          <div className="flex-1 min-w-0 mx-4"> {/* Usa w-1/2 para darle 50% del ancho y centrar su contenido */}
             <GrafoSuenios suenios={suenios} conexiones={conexiones} />
           </div>
           
-          <div className="w-2/9 h-30vh"> 
+          <div className="w-80 flex-shrink-0"> 
            <PanelEventos></PanelEventos>
           </div>
           
