@@ -88,7 +88,8 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
 
   // Generar los elementos de diamante (usando el ícono 💎)
   const diamantes = Array.from({ length: fragmentosActuales }, (_, index) => (
-    <span key={`diamante-${index}`} style={{ fontSize: '1em' }}>
+    <span key={`diamante-${index}`} style={{ 
+      fontSize: '1.5em' }}>
       💎
     </span>
   ));
@@ -97,9 +98,9 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
   // Aquí usaré un ícono de persona, ya que no tengo acceso al CSS de .persona-icon
   const personas = Array.from({ length: personasActuales }, (_, index) => (
     <span key={`persona-${index}`} style={{ 
-        fontSize: '1.2em',
+        fontSize: '1.3em',
         background: '#fab31aff',
-        border: '2px solid white',
+        border: '2px solid #260845',
         borderRadius: '50%' }}>
       👤
     </span> // Usando un ícono Unicode (Persona)
@@ -112,16 +113,17 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
         height: 150,
         borderRadius: "50%",
         background: "linear-gradient(to bottom right, #260845, #160425)",
-        border: "4px solid #a855f7",
+        border: "4px solid #470783ff",
         display: "flex",
         flexDirection: "column", // Para apilar el contenido verticalmente
         alignItems: "center",
         justifyContent: "space-between",
         padding: 8,
-        margin: 12,
+        margin: 25,
         fontWeight: "bold",
         color: "white",
-        fontSize: 14,
+        textTransform: 'uppercase',
+        fontSize: 20,
         textAlign: "center",
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)", // Opcional: para mejor visualización
       }}
@@ -131,12 +133,12 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
       <Handle type="target" style={{width: 10, height: 10, background: "white"}} position={Position.Bottom} />
       
       {/* 💎 Fila de Diamantes */}
-      <div style={{ display: 'flex', gap: '1px', marginTop: '4px', marginBottom: '2px', minHeight: '1.2em' }}>
+      <div style={{ display: 'flex', gap: '1px', marginTop: '-35px', marginBottom: '0px', minHeight: '1.5em' }}>
         {diamantes}
       </div>
 
       {/* Nombre del Sueño */}
-      <div style={{ margin: '5px 0', overflowWrap: 'break-word' }}>
+      <div style={{ marginTop: '0px', overflowWrap: 'initial' }}>
         {nombreSuenio}
       </div>
       
@@ -144,7 +146,8 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
       <div style={{ 
         display: 'flex', 
         gap: '5px',  
-        minHeight: '1.2em'
+        minHeight: '1.2em',
+        marginBottom: '-25px' 
         }}>
         {personas}
       </div>

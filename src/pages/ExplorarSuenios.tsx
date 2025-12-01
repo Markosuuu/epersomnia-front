@@ -22,12 +22,13 @@ export default function ExplorarSuenios() {
       .then(setAvatares);
   }, []);
 
-  if (suenios.length === 0) return <p className="text-center">Cargando sueños...</p>;
+  if (suenios.length === 0) return 
+    <div className="m-auto"><p className="text-center">Cargando sueños...</p></div>
 
   return (
     <>
       <div style={{ padding: '20px' }}> {/* Contenedor principal para el layout */}
-        <div className="flex h-10vh">
+        <div className="flex h-full">
           
           <div className="w-81 flex-shrink-0"> 
             <TarjetaAvatar viajeros={avatares} />
