@@ -6,12 +6,7 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDoey0atwO-AOXbffuFFwUG8Qat1G1fXbA",
-  authDomain: "epersomnia.firebaseapp.com",
-  projectId: "epersomnia",
-  storageBucket: "epersomnia.firebasestorage.app",
-  messagingSenderId: "264484217898",
-  appId: "1:264484217898:web:0d767ec051f9aad4becf53"
+
 };
 
 // Initialize Firebase
