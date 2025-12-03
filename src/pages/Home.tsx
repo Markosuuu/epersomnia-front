@@ -1,4 +1,4 @@
-import React, { useEffect, useState, type FC } from 'react';
+import { useEffect, useState, useRef, type FC } from 'react';
 import ExplorarSuenios from './ExplorarSuenios'; // Importa el componente que se cargará al iniciar
 
 // --- Función de Utilidad: Reintentos con Retroceso Exponencial ---
@@ -11,7 +11,7 @@ import ExplorarSuenios from './ExplorarSuenios'; // Importa el componente que se
  * @param delay Retraso inicial en ms antes de los reintentos.
  * @returns La respuesta exitosa de la petición.
  */
-const retryFetch = async (url: string, options: RequestInit, maxRetries = 5, delay = 500): Promise<Response> => {
+const retryFetch = async (url: string, options: RequestInit, maxRetries = 1, delay = 500): Promise<Response> => {
     for (let i = 0; i < maxRetries; i++) {
         try {
             const response = await fetch(url, options);
@@ -40,78 +40,81 @@ type ViewState = 'welcome' | 'explorar-suenios';
 
 // Componente de Bienvenida
 const Home: FC = () => {
+    const isResetExecuted = useRef(false);
     // Estado para manejar la carga (opcional, pero útil para feedback)
     const [isLoading, setIsLoading] = useState<boolean>(true);
     // Estado para la simulación de navegación (cambiar de componente sin recargar)
     const [view, setView] = useState<ViewState>('welcome');
 
-    // 1. Efecto que se ejecuta solo una vez al cargar el componente
+    // --- 1. Lógica de Reset (se mantiene para la inicialización) ---
     useEffect(() => {
+        if (isResetExecuted.current) {
+            return;
+        }
+
         const resetSimulation = async () => {
             try {
-                // Envía el POST request al endpoint de reseteo, usando el mecanismo de reintento
-                await retryFetch('http://localhost:8080/servicio/reset', {
+                // Aquí usamos retryFetch porque el reset es crítico para el estado inicial
+                await retryFetch('http://localhost:8080/simulacion/reset', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    // No es necesario enviar un body, pero se incluye por si acaso
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({}),
                 });
                 console.log("Servicio reseteado con éxito.");
             } catch (error) {
-                // Si todos los reintentos fallan, el error se captura aquí.
                 console.error("Error al resetear el servicio:", error);
-                // Si falla, el botón de "Empezar Simulación" podría permanecer deshabilitado o mostrar un error.
             } finally {
                 setIsLoading(false);
             }
         };
 
         resetSimulation();
+        isResetExecuted.current = true;
     }, []);
 
-    // 2. Función para manejar la redirección (cambio de vista)
+    // --- 2. Función para manejar el inicio y la redirección (MODIFICADA) ---
     const handleStartSimulation = (): void => {
-        // Cambiamos el estado de la vista para renderizar ExplorarSuenios
+        
+        // 1. Envía el POST request de "inicio" sin usar 'await'
+        fetch('http://localhost:8080/simulacion/start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({}),
+        })
+        .then(response => {
+            // El .then() se ejecuta cuando el servidor recibe la solicitud
+            // (incluso si la respuesta HTTP tarda), pero no bloquea la UI.
+            if (!response.ok) {
+                // Puedes registrar un error si el servidor responde con un estado 4xx/5xx
+                console.warn(`[START] El servidor respondió con estado ${response.status} al intentar iniciar la simulación.`);
+            }
+            console.log("[START] Solicitud de inicio enviada.");
+        })
+        .catch(error => {
+            // Captura errores de red (e.g., el servidor está caído)
+            console.error("[START] Fallo de red al intentar iniciar la simulación:", error);
+        });
+
+        // 2. Cambia la vista INMEDIATAMENTE después de enviar la petición
         setView('explorar-suenios');
     };
 
-    // 3. Manejador de Vistas (Simulación de Router)
+    // --- 3. Manejador de Vistas ---
     if (view === 'explorar-suenios') {
-        // Renderiza el componente ExplorarSuenios
         return <ExplorarSuenios />;
     }
     
-    // Contenedor principal de Bienvenida
+    // --- Renderizado JSX (se mantiene sin cambios) ---
     return (
         <div 
             className="relative flex flex-col items-center justify-center h-screen w-full" 
             style={{ 
-                // Gradiente de fondo actualizado a un color más oscuro
                 backgroundImage: 'linear-gradient(to bottom, #260845, #0e021a)',
             }}
         >
-            {/* Contenedor de la Leyenda de Producción */}
-            <div className="absolute top-8 flex flex-col items-center text-white">
-                {/* Línea 1: "una producción de" */}
-                <p className="
-                    text-base font-semibold italic opacity-90
-                    /* Italica, no tan gordito y tamaño base */
-                ">
-                    una producción de
-                </p>
-                {/* Línea 2: "😿mEPERSdon as¿" */}
-                <p 
-                    className="
-                        text-xl font-extrabold not-italic mt-[-4px]
-                        /* Se mantiene negrita, no itálica, y se usa estilo inline para mayor espaciado */
-                    "
-                    style={{ letterSpacing: '0.4em' }}
-                >
-                    😿mEPERSdon as¿
-                </p>
-            </div>
+            {/* ... Resto del JSX (Título, Producción, etc.) ... */}
 
             {/* Título Central */}
             <h1 className="
@@ -129,7 +132,7 @@ const Home: FC = () => {
 
             {/* Botón de Empezar Simulación */}
             <button
-                onClick={handleStartSimulation}
+                onClick={handleStartSimulation} // <-- Llama a la nueva función
                 disabled={isLoading}
                 className={`
                     px-10 py-4 text-xl font-semibold rounded-xl transition duration-300 transform
@@ -138,8 +141,8 @@ const Home: FC = () => {
                     ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-teal-500/50'}
                 `}
                 style={{
-                    backgroundColor: 'rgba(32, 206, 177)', // Color del Botón: Teal brillante
-                    color: '#160425',                       // Color del Texto: Negro oscuro
+                    backgroundColor: 'rgba(32, 206, 177)',
+                    color: '#160425',
                 }}
             >
                 {isLoading ? 'Reseteando...' : 'Empezar Simulación'}

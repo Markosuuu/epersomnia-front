@@ -28,6 +28,7 @@ export interface EventoMovimiento extends EventoBase{
   sueñoId: number;
   aspecto: string;
   nombreSueñoDestino: string;
+  lucidezRestante: number;
 }
 
 export interface EventoPruebaSuperada extends EventoBase{

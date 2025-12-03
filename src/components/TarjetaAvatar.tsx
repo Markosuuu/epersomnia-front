@@ -78,28 +78,17 @@ const handleIcon = (elem: keyof Omit<PoderElemental, 'total'>) => {
 
 const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
   
-  const { aspecto, viajeroAstralNombre, lucidezDisponible, poderElemental } = data;
+  const {aspecto, viajeroAstralNombre, lucidezDisponible, poderElemental } = data;
   const [lucidezActual, setLucidezActual] = useState(lucidezDisponible || 0);
   const [vidasRestantes, setVidasRestantes] = useState(3);
   const [fragmentosRecogidos, setFragmentosRecogidos] = useState(0);
 
 
   const handleObtenerFragmento = () => setFragmentosRecogidos(p => p + 1);
-  const handleQuitarFragmento = () => setFragmentosRecogidos(p => Math.max(0, p - 1));
+
+  const handlePerderLucidez = () => setLucidezActual(p => Math.max(0, p - 1))
 
   const handlePerderVida = () => setVidasRestantes(p => Math.max(0, p - 1));
-  const handleSumarVida = () => setVidasRestantes(p => Math.min(3, p + 1));
-
-  const handleQueryVida = (snapshot: QuerySnapshot<DocumentData>) => {
-    snapshot.docChanges().forEach(change => {
-      if (change.type == ("added")) {
-        handlePerderVida();
-      }
-      if (change.type == ("removed")) {
-        handleSumarVida();
-      }
-    })
-  }
   
   useEffect(() => {
 
@@ -127,8 +116,14 @@ const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
     const queryPierdeDesafiado = query(
       eventosRef, 
       where("metadata.tipo", "==", "Desconocimiento"),
-      where("metadata.avatarDesafiadoId", "==", data.id),
+      where("metadata.avatarRetadorId", "==", data.id),
       where("metadata.fueGanador", "==", true),
+    );
+
+    const queryDesafió = query(
+      eventosRef, 
+      where("metadata.tipo", "==", "Desconocimiento"),
+      where("metadata.avatarRetadorId", "==", data.id),
     );
 
 
@@ -141,30 +136,46 @@ const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
       })
     });
 
+    const unsubscribeDesafio = onSnapshot(queryDesafió, (snapshot) => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type == ("added")) {
+          handlePerderLucidez();
+        }
+      })
+    });
+
     const unsubscribeFragmentos = onSnapshot(queryFragmentos, (snapshot) => {
       snapshot.docChanges().forEach(change => {
         if (change.type == ("added")) {
           handleObtenerFragmento();
         }
-        if (change.type == ("removed")) {
-          handleQuitarFragmento();
-        }
       })
     });
 
     const unsuscribePierdeRetador = onSnapshot(queryPierdeRetador, (snapshot) => {
-      handleQueryVida(snapshot);
+      snapshot.docChanges().forEach(change => {
+        if (change.type == ("added")) {
+          handlePerderVida();
+        }
+      })
     });
 
     const unsuscribePierdeDesafiado = onSnapshot(queryPierdeDesafiado, (snapshot) => {
-      handleQueryVida(snapshot);
+      snapshot.docChanges().forEach(change => {
+        if (change.type == ("added")) {
+          handlePerderVida();
+        }
+      })
     })
+
+    
 
     return () => {
       unsubscribeMovimientos();
       unsubscribeFragmentos();
       unsuscribePierdeDesafiado();
       unsuscribePierdeRetador();
+      unsubscribeDesafio();
     }
   },[data.id]);
 
@@ -338,7 +349,7 @@ const subtitleStyle: React.CSSProperties = {
 const statsStyle: React.CSSProperties = {
   margin: '0',
   padding: '1px 5px 1px 3px',
-  fontSize: '1.15em',
+  fontSize: '1.10em',
   fontWeight: '600',
   color: '#eeff00ff',
   background: '#093f389d',

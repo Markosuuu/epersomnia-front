@@ -175,12 +175,14 @@ export const RenderQuedoVarado: React.FC<{ evento: EventoQuedoVarado }> = ({ eve
 export const RenderObtenerCorazon: React.FC<{ evento: EventoObtenerCorazon }> = ({ evento }) => {
   return (
     <>
-      <span className="font-semibold text-[#e1f016ff] text-400 ">
-        🏆 {evento.aspecto} 
-      </span>
-      <span className="ml-1 text-gray-200">
-        Obtuvo el Coraón de la Torre!!🫀 &nbsp; 
-      </span>
+      <div className="bg-[#20ceb199] rounded-[8px] p-[3px] pl-[5px] pt-[9px] ">
+        <span className="bg-[#470783ff] rounded-[5px] p-[2px] font-bold text-white-400 ">
+          🏆 {evento.aspecto} 🏆
+        </span>
+        <span className="ml-1 font-bold text-black text-200">
+          Obtuvo el Corazón de la Torre!!🫀 &nbsp; 
+        </span>
+      </div>
     </>
   );  
 }

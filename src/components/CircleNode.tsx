@@ -23,7 +23,7 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
   const handlePartidaDeNodo = () => setPersonasActuales(p => Math.max(0, p - 1));
 
   const handleQuitarFragmento = () => setFragmentosActuales(p => Math.max(0, p - 1));
-  const handlePonerFragmento = () => setFragmentosActuales(p => Math.min(cantidadDiamantes, p + 1));
+  //const handlePonerFragmento = () => setFragmentosActuales(p => Math.min(cantidadDiamantes, p + 1));
 
   useEffect(() => {
 
@@ -43,10 +43,16 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
     
     const queryObtenerFragmento = query(
       eventosRef, 
-      where("metadata.tipo", "==", "Obtener Fargmento"),
+      where("metadata.tipo", "==", "Obtener Fragmento"),
       where("metadata.sueñoId", "==", data.id)
     );
-    
+
+    const queryMurioUnAvatar = query(
+      eventosRef, 
+      where("metadata.perecioElPerdedor", "==", true),
+      where("metadata.sueñoId", "==", data.id),
+    );
+  
 
     const unsubscribers: (() => void)[] = [];
 
@@ -76,12 +82,18 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
       if (change.type == ("added")) {
         handleQuitarFragmento();
       }
-      if (change.type == ("removed")) {
-        handlePonerFragmento();
-      }
     })
   })
   unsubscribers.push(unsubscribeFragmentos);
+
+  const unsubscribeVida = onSnapshot(queryMurioUnAvatar, (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type == ("added")) {
+        handlePartidaDeNodo();
+      }
+    })
+  })
+  unsubscribers.push(unsubscribeVida);
 
   return () => unsubscribers.forEach(unsub => unsub());
 }, [data.id]); // Depende del ID del nodo
