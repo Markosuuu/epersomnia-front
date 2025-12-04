@@ -91,7 +91,13 @@ const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
     if (value != lucidezActual) { setLucidezActual(value) }
   };
   const handleActualizarVidas = (value: React.SetStateAction<number>) => {
-    if (value != vidasRestantes) { setVidasRestantes(value) }
+    if (value != vidasRestantes) { 
+      setVidasRestantes(value) 
+    }
+
+    if (value == 0) {
+      
+    }
   };
   
   useEffect(() => {
