@@ -17,7 +17,7 @@ const EventoRendererMap: Record<Evento["tipo"], RendererComponent> = {
   "Obtuvo El Corazón": RenderObtenerCorazon as RendererComponent,     
 };
 
-const PanelEventos = () => {
+const PanelEventos = ({ onGanadorDetectado }: any) => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const chatRef = useRef<HTMLDivElement>(null); 
 
@@ -40,6 +40,19 @@ const PanelEventos = () => {
       });
       
       setEventos(eventosData.reverse()); 
+      
+      snapshot.docChanges().forEach(change => {
+        if (change.type === "added") {
+          const data = change.doc.data();
+
+          if (data.tipo === "Obtuvo El Corazón") {
+            // Espera 5 segundos
+            setTimeout(() => {
+              onGanadorDetectado(data.aspecto || "Avatar desconocido");
+            }, 3000);
+          }
+        }
+      });
     });
 
     return () => unsubscribe();

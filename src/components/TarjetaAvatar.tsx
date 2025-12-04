@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, where, QuerySnapshot, type DocumentData } from 'firebase/firestore';
+import { collection, onSnapshot, query, where} from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 // --- Definición de Tipos (Interfaces) ---

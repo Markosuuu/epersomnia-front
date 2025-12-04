@@ -2,11 +2,21 @@ import GrafoSuenios from "../components/GrafoSuenios";
 import { useEffect, useState } from "react";
 import TarjetaAvatar from "../components/TarjetaAvatar";
 import PanelEventos from "../components/PanelEventos";
+import ModalGanador from "../components/ModalGanador";
+
 
 export default function ExplorarSuenios() {
   const [suenios, setSuenios] = useState([]);
   const [conexiones, setConexiones] = useState([]);
   const [avatares, setAvatares] = useState([]);
+  const [mostrarModalGanador, setMostrarModalGanador] = useState(false);
+  const [ganador, setGanador] = useState("");
+
+
+  const handleGanadorDetectado = (nombre: any) => {
+    setGanador(nombre);
+    setMostrarModalGanador(true);
+  };
 
   useEffect(() => {
     fetch(`http://localhost:8080/sueño`)
@@ -27,7 +37,15 @@ export default function ExplorarSuenios() {
 
   return (
     <>
-      <div style={{ padding: '20px' }}> {/* Contenedor principal para el layout */}
+      {mostrarModalGanador && (
+        <ModalGanador 
+          isOpen={mostrarModalGanador}
+          ganador={ganador}
+          onClose={() => setMostrarModalGanador(false)}
+        />
+      )}
+
+      <div style={{ padding: '20px' }} className={mostrarModalGanador ? "blur-sm" : ""}> {/* Contenedor principal para el layout */}
         <div className="flex h-full">
           
           <div className="w-81 flex-shrink-0"> 
@@ -39,7 +57,7 @@ export default function ExplorarSuenios() {
           </div>
           
           <div className="w-80 flex-shrink-0"> 
-           <PanelEventos></PanelEventos>
+           <PanelEventos onGanadorDetectado={handleGanadorDetectado} ></PanelEventos>
           </div>
           
         </div>
