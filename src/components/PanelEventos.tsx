@@ -29,8 +29,7 @@ const PanelEventos = () => {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const eventosData: Evento[] = snapshot.docs.map((doc: DocumentData) => {
-        const rawData = doc.data();
-        const data = rawData.metadata || rawData;
+        const data = doc.data();
 
         return {
           id: doc.id,

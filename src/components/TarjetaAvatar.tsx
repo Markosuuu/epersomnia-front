@@ -78,119 +78,44 @@ const handleIcon = (elem: keyof Omit<PoderElemental, 'total'>) => {
 
 const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
   
-  const {aspecto, viajeroAstralNombre, lucidezDisponible, poderElemental } = data;
+  const {aspecto, viajeroAstralNombre, lucidezDisponible, poderElemental} = data;
   const [lucidezActual, setLucidezActual] = useState(lucidezDisponible || 0);
   const [vidasRestantes, setVidasRestantes] = useState(3);
   const [fragmentosRecogidos, setFragmentosRecogidos] = useState(0);
 
 
-  const handleObtenerFragmento = () => setFragmentosRecogidos(p => p + 1);
-
-  const handlePerderLucidez = () => setLucidezActual(p => Math.max(0, p - 1))
-
-  const handlePerderVida = () => setVidasRestantes(p => Math.max(0, p - 1));
+  const handleActualizarFragmento = (value: React.SetStateAction<number>) => { 
+    if (value != fragmentosRecogidos) { setFragmentosRecogidos(value) }
+  };
+  const handleActualizarLucidez = (value: React.SetStateAction<number>) => {
+    if (value != lucidezActual) { setLucidezActual(value) }
+  };
+  const handleActualizarVidas = (value: React.SetStateAction<number>) => {
+    if (value != vidasRestantes) { setVidasRestantes(value) }
+  };
   
   useEffect(() => {
 
-    const eventosRef = collection(db, "avatar-log");
+    const eventosRef = collection(db, "avatar-stats");
     
-    const queryMovimiento = query(
+    const queryStats = query(
       eventosRef, 
-      where("tipo", "==", "Movimiento"),
-      where("avatarId", "==", data.id)
-    );
-    
-    const queryPruebaSuperada = query(
-      eventosRef, 
-      where("tipo", "==", "Prueba Superada"),
-      where("avatarId", "==", data.id)
+      where("aspecto", "==", aspecto)
     );
 
-    const queryFragmentos = query(
-      eventosRef, 
-      where("tipo", "==", "Obtener Fragmento"),
-      where("avatarId", "==", data.id)
-    );
-
-    const queryPierdeRetador = query(
-      eventosRef, 
-      where("tipo", "==", "Desconocimiento"),
-      where("avatarRetadorId", "==", data.id),
-      where("fueGanador", "==", false),
-    );
-
-    const queryPierdeDesafiado = query(
-      eventosRef, 
-      where("tipo", "==", "Desconocimiento"),
-      where("avatarDesafiadoId", "==", data.id),
-      where("fueGanador", "==", true),
-    );
-
-    const queryDesafió = query(
-      eventosRef, 
-      where("tipo", "==", "Desconocimiento"),
-      where("avatarRetadorId", "==", data.id),
-    );
-
-
-    const unsubscribeMovimientos = onSnapshot(queryMovimiento, (snapshot) => {
+    const unsubscribeStats = onSnapshot(queryStats, (snapshot) => {
       snapshot.docChanges().forEach(change => {
-        if (change.type == ("added")) {
+        if (change.type == ("modified")) {
           const eventoData = change.doc.data()
-          setLucidezActual(eventoData.lucidezRestante);
+          handleActualizarFragmento(eventoData.fragmentosObtenidos);
+          handleActualizarLucidez(eventoData.lucidezDisponible);
+          handleActualizarVidas(eventoData.vidasRestantes);
         }
       })
-    });
-
-    const unsubscribeDesafio = onSnapshot(queryDesafió, (snapshot) => {
-      snapshot.docChanges().forEach(change => {
-        if (change.type == ("added")) {
-          handlePerderLucidez();
-        }
-      })
-    });
-
-    const unsubscribePrueba = onSnapshot(queryPruebaSuperada, (snapshot) => {
-      snapshot.docChanges().forEach(change => {
-        if (change.type == ("added")) {
-          handlePerderLucidez();
-        }
-      })
-    });
-
-    const unsubscribeFragmentos = onSnapshot(queryFragmentos, (snapshot) => {
-      snapshot.docChanges().forEach(change => {
-        if (change.type == ("added")) {
-          handleObtenerFragmento();
-        }
-      })
-    });
-
-    const unsuscribePierdeRetador = onSnapshot(queryPierdeRetador, (snapshot) => {
-      snapshot.docChanges().forEach(change => {
-        if (change.type == ("added")) {
-          handlePerderVida();
-        }
-      })
-    });
-
-    const unsuscribePierdeDesafiado = onSnapshot(queryPierdeDesafiado, (snapshot) => {
-      snapshot.docChanges().forEach(change => {
-        if (change.type == ("added")) {
-          handlePerderVida();
-        }
-      })
-    })
-
-    
+    }); 
 
     return () => {
-      unsubscribeMovimientos();
-      unsubscribeFragmentos();
-      unsuscribePierdeDesafiado();
-      unsuscribePierdeRetador();
-      unsubscribeDesafio();
-      unsubscribePrueba();
+      unsubscribeStats();
     }
   },[data.id]);
 
@@ -252,7 +177,7 @@ const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
           <div style={bottomStatsContainerStyle}>
 
             {/* Lucidez */}
-            <span style={statsStyle}>✨ {lucidezActual}</span>
+            <span style={statsStyle}>✨🧠 {lucidezActual}</span>
 
             {/* Fragmentos */}
             <span

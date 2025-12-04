@@ -47,6 +47,12 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
       where("sueñoId", "==", data.id)
     );
 
+    const queryObtenerCorazon = query(
+      eventosRef, 
+      where("tipo", "==", "Obtuvo El Corazón"),
+      where("sueñoId", "==", data.id)
+    );
+
     const queryMurioUnAvatar = query(
       eventosRef, 
       where("perecioElPerdedor", "==", true),
@@ -91,6 +97,15 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
     })
   })
   unsubscribers.push(unsubscribeVida);
+
+  const unsubscribeCorazon = onSnapshot(queryObtenerCorazon, (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type == ("added")) {
+        handleQuitarFragmento();
+      }
+    })
+  })
+  unsubscribers.push(unsubscribeCorazon);
 
   return () => unsubscribers.forEach(unsub => unsub());
 }, [data.id]); // Depende del ID del nodo
