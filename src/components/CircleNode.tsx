@@ -31,26 +31,26 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
 
     const queryGenteQueLlega = query(
       eventosRef, 
-      where("metadata.tipo", "==", "Movimiento"),
-      where("metadata.sueñoDestinoId", "==", data.id)
+      where("tipo", "==", "Movimiento"),
+      where("sueñoDestinoId", "==", data.id)
     ); 
 
     const queryGenteQueSeVa = query(
       eventosRef, 
-      where("metadata.tipo", "==", "Movimiento"),
-      where("metadata.sueñoOrigenId", "==", data.id)
+      where("tipo", "==", "Movimiento"),
+      where("sueñoOrigenId", "==", data.id)
     );
     
     const queryObtenerFragmento = query(
       eventosRef, 
-      where("metadata.tipo", "==", "Obtener Fragmento"),
-      where("metadata.sueñoId", "==", data.id)
+      where("tipo", "==", "Obtener Fragmento"),
+      where("sueñoId", "==", data.id)
     );
 
     const queryMurioUnAvatar = query(
       eventosRef, 
-      where("metadata.perecioElPerdedor", "==", true),
-      where("metadata.sueñoId", "==", data.id),
+      where("perecioElPerdedor", "==", true),
+      where("sueñoId", "==", data.id),
     );
   
 
@@ -60,9 +60,6 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
       snapshot.docChanges().forEach(change => {
         if (change.type == ("added")) {
           handleArriboANodo();
-        }
-        if (change.type == ("removed")) {
-          handlePartidaDeNodo();
         }
       })
   })

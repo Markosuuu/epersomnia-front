@@ -96,34 +96,40 @@ const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
     
     const queryMovimiento = query(
       eventosRef, 
-      where("metadata.tipo", "==", "Movimiento"),
-      where("metadata.avatarId", "==", data.id)
+      where("tipo", "==", "Movimiento"),
+      where("avatarId", "==", data.id)
+    );
+    
+    const queryPruebaSuperada = query(
+      eventosRef, 
+      where("tipo", "==", "Prueba Superada"),
+      where("avatarId", "==", data.id)
     );
 
     const queryFragmentos = query(
       eventosRef, 
-      where("metadata.tipo", "==", "Obtener Fragmento"),
-      where("metadata.avatarId", "==", data.id)
+      where("tipo", "==", "Obtener Fragmento"),
+      where("avatarId", "==", data.id)
     );
 
     const queryPierdeRetador = query(
       eventosRef, 
-      where("metadata.tipo", "==", "Desconocimiento"),
-      where("metadata.avatarRetadorId", "==", data.id),
-      where("metadata.fueGanador", "==", false),
+      where("tipo", "==", "Desconocimiento"),
+      where("avatarRetadorId", "==", data.id),
+      where("fueGanador", "==", false),
     );
 
     const queryPierdeDesafiado = query(
       eventosRef, 
-      where("metadata.tipo", "==", "Desconocimiento"),
-      where("metadata.avatarRetadorId", "==", data.id),
-      where("metadata.fueGanador", "==", true),
+      where("tipo", "==", "Desconocimiento"),
+      where("avatarDesafiadoId", "==", data.id),
+      where("fueGanador", "==", true),
     );
 
     const queryDesafió = query(
       eventosRef, 
-      where("metadata.tipo", "==", "Desconocimiento"),
-      where("metadata.avatarRetadorId", "==", data.id),
+      where("tipo", "==", "Desconocimiento"),
+      where("avatarRetadorId", "==", data.id),
     );
 
 
@@ -131,12 +137,20 @@ const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
       snapshot.docChanges().forEach(change => {
         if (change.type == ("added")) {
           const eventoData = change.doc.data()
-          setLucidezActual(eventoData.metadata.lucidezRestante);
+          setLucidezActual(eventoData.lucidezRestante);
         }
       })
     });
 
     const unsubscribeDesafio = onSnapshot(queryDesafió, (snapshot) => {
+      snapshot.docChanges().forEach(change => {
+        if (change.type == ("added")) {
+          handlePerderLucidez();
+        }
+      })
+    });
+
+    const unsubscribePrueba = onSnapshot(queryPruebaSuperada, (snapshot) => {
       snapshot.docChanges().forEach(change => {
         if (change.type == ("added")) {
           handlePerderLucidez();
@@ -176,6 +190,7 @@ const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
       unsuscribePierdeDesafiado();
       unsuscribePierdeRetador();
       unsubscribeDesafio();
+      unsubscribePrueba();
     }
   },[data.id]);
 
@@ -237,7 +252,7 @@ const TarjetaViajero: React.FC<{ data: ViajeroAstral }> = ({ data }) => {
           <div style={bottomStatsContainerStyle}>
 
             {/* Lucidez */}
-            <span style={statsStyle}>✨🧠 {lucidezActual}</span>
+            <span style={statsStyle}>✨ {lucidezActual}</span>
 
             {/* Fragmentos */}
             <span

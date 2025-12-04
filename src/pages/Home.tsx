@@ -137,7 +137,7 @@ const Home: FC = () => {
                 className={`
                     px-10 py-4 text-xl font-semibold rounded-xl transition duration-300 transform
                     shadow-2xl hover:scale-[1.03] active:scale-[0.98] focus:outline-none focus:ring-4 
-                    focus:ring-teal-400/50 
+                    focus:ring-teal-400/50 cursor-pointer
                     ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-teal-500/50'}
                 `}
                 style={{
