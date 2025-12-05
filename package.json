@@ -10,9 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@reactflow/minimap": "^11.7.14",
+    "@reactflow/node-resizer": "^2.2.14",
     "@tailwindcss/vite": "^4.1.17",
+    "firebase": "^12.6.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "reactflow": "^11.11.4",
+    "wouter": "^3.7.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
