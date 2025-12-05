@@ -28,7 +28,6 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
 
   const handleQuitarFragmento = () =>
     setFragmentosActuales((p) => Math.max(0, p - 1));
-  //const handlePonerFragmento = () => setFragmentosActuales(p => Math.min(cantidadDiamantes, p + 1));
 
   useEffect(() => {
     const eventosRef = collection(db, "avatar-log");
@@ -51,15 +50,16 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
       where("sueñoId", "==", data.id)
     );
 
+    const queryObtenerCorazon = query(
+      eventosRef, 
+      where("tipo", "==", "Obtuvo El Corazón"),
+      where("sueñoId", "==", data.id)
+    );
+
     const queryMurioUnAvatar = query(
       eventosRef,
       where("perecioElPerdedor", "==", true),
       where("sueñoId", "==", data.id)
-    );
-
-    const queryCorazon = query(
-      eventosRef,
-      where("tipo", "==", "Obtuvo El Corazón")
     );
 
     const unsubscribers: (() => void)[] = [];
@@ -103,25 +103,17 @@ export default function CircleNode({ data }: { data: CircleNodeData }) {
     });
     unsubscribers.push(unsubscribeVida);
 
-    const unsubscribeCorazon = onSnapshot(queryCorazon, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type == "added") {
-          handleBotonStats();
-        }
-      });
-    });
-    unsubscribers.push(unsubscribeCorazon);
+  const unsubscribeCorazon = onSnapshot(queryObtenerCorazon, (snapshot) => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type == ("added")) {
+        handleQuitarFragmento();
+      }
+    })
+  })
+  unsubscribers.push(unsubscribeCorazon);
 
-    return () => unsubscribers.forEach((unsub) => unsub());
-  }, [data.id]); // Depende del ID del nodo
-
-  const handleBotonStats = () => {
-    return(
-      <>
-      <button>ESTADÍSTICAS</button>
-      </>
-    );
-  };
+  return () => unsubscribers.forEach(unsub => unsub());
+}, [data.id]); // Depende del ID del nodo
 
   // Generar los elementos de diamante (usando el ícono 💎)
   const diamantes = Array.from({ length: fragmentosActuales }, (_, index) => (
